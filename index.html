@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro Tower Bloxx</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        :root {
+            --bg-color: #8BC400;
+            --primary-color: #27360D;
+            --secondary-color: #27360D;
+            --text-color: #27360D;
+            --accent-color: #27360D;
+            font-family: sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            height: 600px;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            image-rendering: pixelated;
+        }
+
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        .score-box {
+            padding: 10px;
+            text-align: center;
+        }
+
+        #score{
+            font-family : monospace;
+            font-weight: bold;
+            font-size: 24px;
+        }
+
+        #combo-text {
+            color: var(--accent-color);
+            font-size: 14px;
+            height: 20px;
+            transition: transform 0.1s;
+        }
+
+        #menu {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            text-align: center;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 30px;
+            color: var(--primary-color);
+            text-shadow: 2px 2px rgba(0,0,0,0.1);
+        }
+
+        button {
+            background: var(--primary-color);
+            color: var(--bg-color);
+            padding: 15px 30px;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        .instructions {
+            margin-top: 20px;
+            font-size: 10px;
+            line-height: 1.6;
+            color: var(--text-color);
+            opacity: 0.7;
+        }
+
+        #msg-popup {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--accent-color);
+            font-size: 18px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-weight: bold;
+        }
+
+        .shake {
+            animation: shake 0.2s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div id="ui">
+            <div class="score-box">
+                <div style="font-size: 10px; margin-bottom: 5px;">SCORE</div>
+                <div id="score">0</div>
+            </div>
+            <div id="combo-text"></div>
+        </div>
+
+        <div id="msg-popup">PERFECT!</div>
+
+        <canvas id="gameCanvas"></canvas>
+
+        <div id="menu">
+            <h1 id="title">TOWER BLOXX</h1>
+            <div id="final-stats" style="display: none; margin-bottom: 20px;">
+                <p>Blocks: <span id="final-blocks">0</span></p>
+                <p>Best: <span id="high-score">0</span></p>
+            </div>
+            <button id="start-btn">START GAME</button>
+            <div class="instructions">
+                TAP OR CLICK TO DROP BLOCK<br><br>
+                LAND PERFECTLY FOR COMBOS<br>
+                MISS THE TOWER AND GAME OVER!
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const menu = document.getElementById('menu');
+        const startBtn = document.getElementById('start-btn');
+        const scoreEl = document.getElementById('score');
+        const comboEl = document.getElementById('combo-text');
+        const msgPopup = document.getElementById('msg-popup');
+        const container = document.getElementById('game-container');
+        
+        // Settings
+        const BLOCK_HEIGHT = 40;
+        const INITIAL_WIDTH = 150;
+        const SWING_RANGE = 120;
+        const BASE_SPEED = 0.04;
+        
+        let gameState = 'MENU';
+        let score = 0;
+        let highScore = localStorage.getItem('towerBloxxHS') || 0;
+        let blocks = [];
+        let cameraY = 0;
+        let targetCameraY = 0;
+        let currentBlock = null;
+        let combo = 0;
+        let animationFrame;
+
+        // Vibration Helper
+        const triggerHaptic = (duration) => {
+            if ("vibrate" in navigator) {
+                navigator.vibrate(duration);
+            }
+        };
+
+        // Sound simulation (Retro beeps)
+        const playTone = (freq, duration) => {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                oscillator.type = 'square';
+                oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+                oscillator.connect(gain);
+                gain.connect(audioCtx.destination);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + duration);
+            } catch(e) { /* Audio context might be blocked */ }
+        };
+
+        class Block {
+            constructor(x, y, width, isSwinging = false) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = BLOCK_HEIGHT;
+                this.color = '#27360D';
+                this.isSwinging = isSwinging;
+                this.angle = 0;
+                this.speed = BASE_SPEED + (blocks.length * 0.002);
+            }
+
+            draw(ctx, offset) {
+                const drawX = this.isSwinging ? (canvas.width / 2 + Math.sin(this.angle) * SWING_RANGE - this.width / 2) : this.x;
+                const drawY = this.y + offset;
+
+                // Shadow
+                ctx.fillStyle = 'rgba(0,0,0,0.1)';
+                ctx.fillRect(drawX + 4, drawY + 2, this.width, this.height);
+
+                // Main body
+                ctx.fillStyle = this.color;
+                ctx.fillRect(drawX, drawY, this.width, this.height);
+            }
+
+            update() {
+                if (this.isSwinging) {
+                    this.angle += this.speed;
+                }
+            }
+
+            getBounds() {
+                const drawX = this.isSwinging ? (canvas.width / 2 + Math.sin(this.angle) * SWING_RANGE - this.width / 2) : this.x;
+                return { x1: drawX, x2: drawX + this.width };
+            }
+        }
+
+        function init() {
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            resetGame();
+            animate();
+        }
+
+        function resetGame() {
+            score = 0;
+            combo = 0;
+            cameraY = 0;
+            targetCameraY = 0;
+            blocks = [new Block(canvas.width / 2 - INITIAL_WIDTH / 2, canvas.height - BLOCK_HEIGHT - 20, INITIAL_WIDTH)];
+            spawnBlock();
+            updateUI();
+        }
+
+        function spawnBlock() {
+            const lastBlock = blocks[blocks.length - 1];
+            currentBlock = new Block(0, lastBlock.y - BLOCK_HEIGHT, lastBlock.width, true);
+        }
+
+        function handleInput() {
+            if (gameState !== 'PLAYING') return;
+
+            const bounds = currentBlock.getBounds();
+            const lastBlock = blocks[blocks.length - 1];
+            
+            const overlapX1 = Math.max(bounds.x1, lastBlock.x);
+            const overlapX2 = Math.min(bounds.x2, lastBlock.x + lastBlock.width);
+            const overlapWidth = overlapX2 - overlapX1;
+
+            if (overlapWidth > 0) {
+                const diff = Math.abs((bounds.x1 + bounds.x2) / 2 - (lastBlock.x + lastBlock.x + lastBlock.width) / 2);
+                
+                let points = 100;
+                if (diff < 6) {
+                    // Perfect
+                    combo++;
+                    points += 200 + (combo * 50);
+                    showPopup("PERFECT!");
+                    playTone(600 + (combo * 50), 0.1);
+                    
+                    // ADDED: Short vibration for perfect placement
+                    triggerHaptic(50);
+                    
+                    currentBlock.x = lastBlock.x;
+                    currentBlock.width = lastBlock.width;
+                } else {
+                    // Normal
+                    combo = 0;
+                    currentBlock.x = overlapX1;
+                    currentBlock.width = overlapWidth;
+                    playTone(400, 0.1);
+                }
+
+                currentBlock.isSwinging = false;
+                blocks.push(currentBlock);
+                score += points;
+                
+                if (blocks.length > 5) {
+                    targetCameraY += BLOCK_HEIGHT;
+                }
+
+                updateUI();
+                spawnBlock();
+            } else {
+                gameOver();
+            }
+        }
+
+        function gameOver() {
+            gameState = 'GAMEOVER';
+            playTone(200, 0.5);
+            
+            // ADDED: Long vibration for game over
+            triggerHaptic([200, 100, 200]);
+            
+            container.classList.add('shake');
+            setTimeout(() => container.classList.remove('shake'), 200);
+
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('towerBloxxHS', highScore);
+            }
+
+            document.getElementById('title').innerText = "GAME OVER";
+            document.getElementById('final-stats').style.display = "block";
+            document.getElementById('final-blocks').innerText = blocks.length - 1;
+            document.getElementById('high-score').innerText = highScore;
+            startBtn.innerText = "TRY AGAIN";
+            menu.style.display = 'flex';
+        }
+
+        function updateUI() {
+            scoreEl.innerText = score;
+            comboEl.innerText = combo > 1 ? `COMBO x${combo}` : '';
+            if (combo > 1) {
+                comboEl.style.transform = 'scale(1.2)';
+                setTimeout(() => comboEl.style.transform = 'scale(1)', 100);
+            }
+        }
+
+        function showPopup(txt) {
+            msgPopup.innerText = txt;
+            msgPopup.style.opacity = 1;
+            setTimeout(() => msgPopup.style.opacity = 0, 800);
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            cameraY += (targetCameraY - cameraY) * 0.1;
+            blocks.forEach(b => b.draw(ctx, cameraY));
+            
+            if (gameState === 'PLAYING') {
+                currentBlock.update();
+                currentBlock.draw(ctx, cameraY);
+            }
+
+            animationFrame = requestAnimationFrame(animate);
+        }
+
+        startBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            menu.style.display = 'none';
+            resetGame();
+            gameState = 'PLAYING';
+        });
+
+        window.addEventListener('mousedown', (e) => {
+            if (gameState === 'PLAYING') handleInput();
+        });
+
+        window.addEventListener('touchstart', (e) => {
+            if (gameState === 'PLAYING') {
+                e.preventDefault();
+                handleInput();
+            }
+        }, { passive: false });
+
+        window.onload = init;
+    </script>
+</body>
+</html>
