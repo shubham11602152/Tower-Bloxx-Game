@@ -10,7 +10,6 @@
       :root {
         --bg-color: #8bc400;
         --primary-color: #27360d;
-        --secondary-color: #27360d;
         --text-color: #27360d;
         --accent-color: #27360d;
         font-family: sans-serif;
@@ -28,19 +27,94 @@
         height: 100vh;
         overflow: hidden;
         touch-action: manipulation;
+        transition:
+          background-color 0.3s ease,
+          color 0.3s ease;
       }
 
       #game-container {
         position: relative;
         width: 100%;
-        max-width: 400px;
-        height: 600px;
+        height: 100%;
         overflow: hidden;
       }
 
       canvas {
         display: block;
         image-rendering: pixelated;
+      }
+
+      /* Settings UI */
+      #settings-toggle {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 100;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 5px;
+        color: var(--primary-color);
+        transition: transform 0.3s ease;
+      }
+
+      #settings-toggle:hover {
+        transform: rotate(45deg);
+      }
+
+      #settings-panel {
+        position: absolute;
+        top: 0;
+        right: -250px;
+        width: 200px;
+        height: 100%;
+        background: var(--bg-color);
+        border-left: 4px solid var(--primary-color);
+        z-index: 90;
+        padding: 60px 20px 20px 20px;
+        transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      #settings-panel.open {
+        right: 0;
+      }
+
+      .setting-item {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .setting-label {
+        font-size: 10px;
+        font-weight: bold;
+        text-transform: uppercase;
+      }
+
+      .toggle-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 12px;
+      }
+
+      input[type="color"] {
+        width: 100%;
+        height: 30px;
+        border: 2px solid var(--primary-color);
+        background: none;
+        cursor: pointer;
+      }
+
+      input[type="checkbox"] {
+        cursor: pointer;
+        width: 18px;
+        height: 18px;
+        accent-color: var(--primary-color);
       }
 
       #ui {
@@ -100,17 +174,19 @@
         text-shadow: 2px 2px rgba(0, 0, 0, 0.1);
       }
 
-      button {
+      .btn {
         background: var(--primary-color);
         color: var(--bg-color);
         padding: 15px 30px;
         border: none;
         font-size: 16px;
         cursor: pointer;
-        transition: transform 0.1s;
+        transition:
+          transform 0.1s,
+          background-color 0.3s;
       }
 
-      button:active {
+      .btn:active {
         transform: scale(0.95);
       }
 
@@ -164,6 +240,56 @@
   </head>
   <body>
     <div id="game-container">
+      <!-- Settings Icon -->
+      <button id="settings-toggle" aria-label="Settings">
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <circle cx="12" cy="12" r="3"></circle>
+          <path
+            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+          ></path>
+        </svg>
+      </button>
+
+      <!-- Settings Panel -->
+      <div id="settings-panel">
+        <div class="setting-item">
+          <span class="setting-label">Background</span>
+          <input type="color" id="bg-picker" value="#8BC400" />
+        </div>
+        <div class="setting-item">
+          <span class="setting-label">Theme Color</span>
+          <input type="color" id="primary-picker" value="#27360D" />
+        </div>
+        <div class="setting-item">
+          <div class="toggle-row">
+            <span class="setting-label">Sound</span>
+            <input type="checkbox" id="sound-toggle" checked />
+          </div>
+        </div>
+        <div class="setting-item">
+          <div class="toggle-row">
+            <span class="setting-label">Haptics</span>
+            <input type="checkbox" id="haptic-toggle" checked />
+          </div>
+        </div>
+        <button
+          class="btn"
+          id="close-settings"
+          style="margin-top: auto; padding: 10px"
+        >
+          CLOSE
+        </button>
+      </div>
+
       <div id="ui">
         <div class="score-box">
           <div style="font-size: 10px; margin-bottom: 5px">SCORE</div>
@@ -183,7 +309,7 @@
           <p>Blocks: <span id="final-blocks">0</span></p>
           <p>Best: <span id="high-score">0</span></p>
         </div>
-        <button id="start-btn">START GAME</button>
+        <button id="start-btn" class="btn">START GAME</button>
         <div class="instructions">
           TAP OR CLICK TO DROP BLOCK<br /><br />
           LAND PERFECTLY FOR COMBOS<br />
@@ -204,6 +330,15 @@
       const msgPopup = document.getElementById("msg-popup");
       const container = document.getElementById("game-container");
 
+      // Settings Elements
+      const settingsToggle = document.getElementById("settings-toggle");
+      const settingsPanel = document.getElementById("settings-panel");
+      const closeSettings = document.getElementById("close-settings");
+      const bgPicker = document.getElementById("bg-picker");
+      const primaryPicker = document.getElementById("primary-picker");
+      const soundToggle = document.getElementById("sound-toggle");
+      const hapticToggle = document.getElementById("haptic-toggle");
+
       const BLOCK_HEIGHT = 40;
       const INITIAL_WIDTH = 150;
       const SWING_RANGE = 120;
@@ -222,13 +357,37 @@
       let blocksSinceReset = 0;
       let animationFrame;
 
+      // Settings Logic
+      settingsToggle.addEventListener("click", (e) => {
+        e.stopPropagation();
+        settingsPanel.classList.toggle("open");
+      });
+
+      closeSettings.addEventListener("click", () => {
+        settingsPanel.classList.remove("open");
+      });
+
+      bgPicker.addEventListener("input", (e) => {
+        document.documentElement.style.setProperty(
+          "--bg-color",
+          e.target.value,
+        );
+      });
+
+      primaryPicker.addEventListener("input", (e) => {
+        const color = e.target.value;
+        document.documentElement.style.setProperty("--primary-color", color);
+        document.documentElement.style.setProperty("--text-color", color);
+        document.documentElement.style.setProperty("--accent-color", color);
+      });
+
       const triggerHaptic = (duration) => {
-        if ("vibrate" in navigator) {
+        if (hapticToggle.checked && "vibrate" in navigator) {
           navigator.vibrate(duration);
         }
       };
 
-      // ENHANCED Audio System
+      // Audio System
       let audioCtx = null;
       let masterGain = null;
 
@@ -245,28 +404,24 @@
       };
 
       const playTone = (freq, duration) => {
-        if (!audioCtx) return;
+        if (!audioCtx || !soundToggle.checked) return;
         const now = audioCtx.currentTime;
 
         try {
           const oscillator = audioCtx.createOscillator();
           const gainNode = audioCtx.createGain();
-
           oscillator.type = "square";
           oscillator.frequency.setValueAtTime(freq, now);
-
           gainNode.gain.cancelScheduledValues(now);
           gainNode.gain.setValueAtTime(0, now);
           gainNode.gain.linearRampToValueAtTime(0.15, now + 0.01);
           gainNode.gain.linearRampToValueAtTime(0.001, now + duration);
-
           oscillator.connect(gainNode);
           gainNode.connect(masterGain);
-
           oscillator.start(now);
           oscillator.stop(now + duration + 0.1);
         } catch (e) {
-          console.warn("Audio playback failed", e);
+          console.warn(e);
         }
       };
 
@@ -276,10 +431,8 @@
           this.y = y;
           this.width = width;
           this.height = BLOCK_HEIGHT;
-          this.color = "#27360D";
           this.isSwinging = isSwinging;
           this.angle = 0;
-          // Speed is based on blocks placed since the last pace reset
           this.speed = BASE_SPEED + speedIndex * 0.0025;
         }
 
@@ -290,16 +443,20 @@
               this.width / 2
             : this.x;
           const drawY = this.y + offset;
+
+          // Get current primary color from CSS variable
+          const primaryColor = getComputedStyle(document.documentElement)
+            .getPropertyValue("--primary-color")
+            .trim();
+
           ctx.fillStyle = "rgba(0,0,0,0.1)";
           ctx.fillRect(drawX + 4, drawY + 2, this.width, this.height);
-          ctx.fillStyle = this.color;
+          ctx.fillStyle = primaryColor;
           ctx.fillRect(drawX, drawY, this.width, this.height);
         }
 
         update() {
-          if (this.isSwinging) {
-            this.angle += this.speed;
-          }
+          if (this.isSwinging) this.angle += this.speed;
         }
 
         getBounds() {
@@ -349,6 +506,7 @@
       }
 
       function handleInput() {
+        if (settingsPanel.classList.contains("open")) return;
         initAudio();
         if (gameState !== "PLAYING") return;
 
@@ -366,38 +524,32 @@
           let points = 100;
 
           if (diff < 6) {
-            // PERFECT PLACEMENT
             combo++;
             streak++;
             points += 200 + combo * 50;
-
             if (streak >= STREAK_RESET_THRESHOLD) {
               showPopup("STREAK! PACE RESET");
               playTone(800, 0.2);
-              streak = 0; // Reset streak count
-              blocksSinceReset = 0; // Reset speed difficulty
+              streak = 0;
+              blocksSinceReset = 0;
             } else {
               showPopup("PERFECT!");
               playTone(600 + combo * 50, 0.12);
             }
-
             triggerHaptic(50);
             currentBlock.x = lastBlock.x;
             currentBlock.width = lastBlock.width;
           } else {
-            // NORMAL PLACEMENT
             combo = 0;
             streak = 0;
             currentBlock.x = overlapX1;
             currentBlock.width = overlapWidth;
             playTone(400, 0.12);
           }
-
           currentBlock.isSwinging = false;
           blocks.push(currentBlock);
           score += points;
-          blocksSinceReset++; // Increase speed difficulty for next block
-
+          blocksSinceReset++;
           if (blocks.length > 5) targetCameraY += BLOCK_HEIGHT;
           updateUI();
           spawnBlock();
@@ -428,7 +580,6 @@
         scoreEl.innerText = score;
         comboEl.innerText = combo > 1 ? `COMBO x${combo}` : "";
         streakEl.innerText = streak > 0 ? `STREAK: ${streak}` : "";
-
         if (combo > 1) {
           comboEl.style.transform = "scale(1.2)";
           setTimeout(() => (comboEl.style.transform = "scale(1)"), 100);
@@ -463,6 +614,7 @@
       window.addEventListener("mousedown", (e) => {
         if (gameState === "PLAYING") handleInput();
       });
+
       window.addEventListener(
         "touchstart",
         (e) => {
