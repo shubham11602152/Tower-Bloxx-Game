@@ -52,7 +52,7 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 10px;
+        gap: 5px;
         z-index: 10;
       }
 
@@ -65,6 +65,13 @@
         font-family: monospace;
         font-weight: bold;
         font-size: 24px;
+      }
+
+      #streak-ui {
+        font-size: 12px;
+        color: var(--accent-color);
+        font-weight: bold;
+        height: 15px;
       }
 
       #combo-text {
@@ -126,6 +133,8 @@
         opacity: 0;
         transition: opacity 0.3s;
         font-weight: bold;
+        text-align: center;
+        z-index: 15;
       }
 
       .shake {
@@ -160,6 +169,7 @@
           <div style="font-size: 10px; margin-bottom: 5px">SCORE</div>
           <div id="score">0</div>
         </div>
+        <div id="streak-ui"></div>
         <div id="combo-text"></div>
       </div>
 
@@ -177,6 +187,7 @@
         <div class="instructions">
           TAP OR CLICK TO DROP BLOCK<br /><br />
           LAND PERFECTLY FOR COMBOS<br />
+          2 PERFECTS IN A ROW RESETS SPEED!<br />
           MISS THE TOWER AND GAME OVER!
         </div>
       </div>
@@ -189,6 +200,7 @@
       const startBtn = document.getElementById("start-btn");
       const scoreEl = document.getElementById("score");
       const comboEl = document.getElementById("combo-text");
+      const streakEl = document.getElementById("streak-ui");
       const msgPopup = document.getElementById("msg-popup");
       const container = document.getElementById("game-container");
 
@@ -196,6 +208,7 @@
       const INITIAL_WIDTH = 150;
       const SWING_RANGE = 120;
       const BASE_SPEED = 0.04;
+      const STREAK_RESET_THRESHOLD = 2;
 
       let gameState = "MENU";
       let score = 0;
@@ -205,6 +218,8 @@
       let targetCameraY = 0;
       let currentBlock = null;
       let combo = 0;
+      let streak = 0;
+      let blocksSinceReset = 0;
       let animationFrame;
 
       const triggerHaptic = (duration) => {
@@ -234,19 +249,15 @@
         const now = audioCtx.currentTime;
 
         try {
-          // Cancel previous gain schedules to prevent volume dip/accumulation
           const oscillator = audioCtx.createOscillator();
           const gainNode = audioCtx.createGain();
 
           oscillator.type = "square";
           oscillator.frequency.setValueAtTime(freq, now);
 
-          // Clear any pending automations and set initial state
           gainNode.gain.cancelScheduledValues(now);
           gainNode.gain.setValueAtTime(0, now);
-          // Sharp rise to full volume
           gainNode.gain.linearRampToValueAtTime(0.15, now + 0.01);
-          // Linear decay for retro feel and consistent volume
           gainNode.gain.linearRampToValueAtTime(0.001, now + duration);
 
           oscillator.connect(gainNode);
@@ -260,7 +271,7 @@
       };
 
       class Block {
-        constructor(x, y, width, isSwinging = false) {
+        constructor(x, y, width, isSwinging = false, speedIndex = 0) {
           this.x = x;
           this.y = y;
           this.width = width;
@@ -268,7 +279,8 @@
           this.color = "#27360D";
           this.isSwinging = isSwinging;
           this.angle = 0;
-          this.speed = BASE_SPEED + blocks.length * 0.002;
+          // Speed is based on blocks placed since the last pace reset
+          this.speed = BASE_SPEED + speedIndex * 0.0025;
         }
 
         draw(ctx, offset) {
@@ -310,6 +322,8 @@
       function resetGame() {
         score = 0;
         combo = 0;
+        streak = 0;
+        blocksSinceReset = 0;
         cameraY = 0;
         targetCameraY = 0;
         blocks = [
@@ -330,6 +344,7 @@
           lastBlock.y - BLOCK_HEIGHT,
           lastBlock.width,
           true,
+          blocksSinceReset,
         );
       }
 
@@ -349,23 +364,40 @@
               (lastBlock.x + lastBlock.x + lastBlock.width) / 2,
           );
           let points = 100;
+
           if (diff < 6) {
+            // PERFECT PLACEMENT
             combo++;
+            streak++;
             points += 200 + combo * 50;
-            showPopup("PERFECT!");
-            playTone(600 + combo * 50, 0.12);
+
+            if (streak >= STREAK_RESET_THRESHOLD) {
+              showPopup("STREAK! PACE RESET");
+              playTone(800, 0.2);
+              streak = 0; // Reset streak count
+              blocksSinceReset = 0; // Reset speed difficulty
+            } else {
+              showPopup("PERFECT!");
+              playTone(600 + combo * 50, 0.12);
+            }
+
             triggerHaptic(50);
             currentBlock.x = lastBlock.x;
             currentBlock.width = lastBlock.width;
           } else {
+            // NORMAL PLACEMENT
             combo = 0;
+            streak = 0;
             currentBlock.x = overlapX1;
             currentBlock.width = overlapWidth;
             playTone(400, 0.12);
           }
+
           currentBlock.isSwinging = false;
           blocks.push(currentBlock);
           score += points;
+          blocksSinceReset++; // Increase speed difficulty for next block
+
           if (blocks.length > 5) targetCameraY += BLOCK_HEIGHT;
           updateUI();
           spawnBlock();
@@ -395,6 +427,8 @@
       function updateUI() {
         scoreEl.innerText = score;
         comboEl.innerText = combo > 1 ? `COMBO x${combo}` : "";
+        streakEl.innerText = streak > 0 ? `STREAK: ${streak}` : "";
+
         if (combo > 1) {
           comboEl.style.transform = "scale(1.2)";
           setTimeout(() => (comboEl.style.transform = "scale(1)"), 100);
@@ -404,7 +438,7 @@
       function showPopup(txt) {
         msgPopup.innerText = txt;
         msgPopup.style.opacity = 1;
-        setTimeout(() => (msgPopup.style.opacity = 0), 800);
+        setTimeout(() => (msgPopup.style.opacity = 0), 1000);
       }
 
       function animate() {
