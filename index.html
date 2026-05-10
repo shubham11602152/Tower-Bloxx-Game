@@ -438,6 +438,7 @@
       const menu = document.getElementById("menu");
       const startBtn = document.getElementById("start-btn");
       const shareBtn = document.getElementById("share-btn");
+      const scoreContainer = document.getElementsByClassName("score-box")[0];
       const scoreEl = document.getElementById("score");
       const comboEl = document.getElementById("combo-text");
       const streakEl = document.getElementById("streak-ui");
@@ -635,7 +636,7 @@
             .getPropertyValue("--primary-color")
             .trim();
           targetCtx.fillStyle = "rgba(0,0,0,0.1)";
-          targetCtx.fillRect(drawX + 4, drawY + 4, this.width, this.height);
+          targetCtx.fillRect(drawX + 4, drawY, this.width, this.height);
           targetCtx.fillStyle = primaryColor;
           targetCtx.fillRect(drawX, drawY, this.width, this.height);
         }
@@ -756,6 +757,9 @@
       function gameOver(reason = "GAME OVER") {
         comboEl.innerText = "";
         streakEl.innerText = "";
+        scoreEl.innerText = "";
+        scoreContainer.style.visibility = "hidden";
+
         gameState = "GAMEOVER_PAUSE";
         timerContainer.style.visibility = "hidden";
         playTone(100, 0.5);
@@ -803,6 +807,7 @@
         scoreEl.innerText = score;
         comboEl.innerText = combo > 1 ? `COMBO x${combo}` : "";
         streakEl.innerText = streak > 0 ? `STREAK: ${streak}` : "";
+        scoreContainer.style.visibility = "visible";
       }
 
       function showPopup(txt) {
@@ -840,7 +845,7 @@
         // Draw Tower in Background (fills full frame)
         pctx.save();
         const towerCanvasHeight = postcardCanvas.height - 150;
-        const scaleFactor = (postcardCanvas.width * 1.5) / canvas.width;
+        const scaleFactor = (postcardCanvas.height * 0.9) / canvas.height;
         const towerHeightInPixels = blocks.length * BLOCK_HEIGHT;
         const postcardZoom = Math.min(
           1,
@@ -860,7 +865,7 @@
           const drawX = b.x;
           const drawY = b.y + postcardOffset;
           pctx.fillStyle = "rgba(0,0,0,0.1)";
-          pctx.fillRect(drawX + 4, drawY + 4, b.width, b.height);
+          pctx.fillRect(drawX + 4, drawY, b.width, b.height);
           pctx.fillStyle = primary;
           pctx.fillRect(drawX, drawY, b.width, b.height);
         });
