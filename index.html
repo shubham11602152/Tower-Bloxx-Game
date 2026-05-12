@@ -3,16 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Retro Tower Bloxx</title>
+    <title>Retro Tower</title>
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
-
+      @import url("https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap");
       :root {
         --bg-color: #8bc400;
         --primary-color: #27360d;
         --text-color: #27360d;
         --accent-color: #27360d;
         font-family: sans-serif;
+        font-weight: 400;
+        font-style: normal;
       }
 
       body {
@@ -201,8 +203,10 @@
       }
 
       h1 {
-        font-size: 24px;
+        font-family: "silkscreen", sans-serif;
+        font-size: 32px;
         margin-bottom: 30px;
+        font-weight: 400;
         color: var(--primary-color);
         text-shadow: 2px 2px rgba(0, 0, 0, 0.2);
       }
@@ -223,6 +227,15 @@
 
       .btn:active {
         transform: scale(0.95);
+      }
+
+      .btn.outlined {
+        width: auto;
+        padding: 10px 20px;
+        font-size: 16px;
+        background: transparent;
+        border: 2px solid var(--primary-color);
+        color: var(--primary-color);
       }
 
       .instructions {
@@ -377,22 +390,11 @@
       <canvas id="gameCanvas"></canvas>
 
       <div id="menu">
-        <h1 id="title">TOWER BLOXX</h1>
+        <h1 id="title">RETRO TOWER</h1>
 
         <div id="postcard-preview-container">
           <img id="postcard-img-preview" alt="Postcard Preview" />
-          <button
-            id="share-btn"
-            class="btn"
-            style="
-              width: auto;
-              padding: 10px 20px;
-              font-size: 16px;
-              background: transparent;
-              border: 2px solid var(--primary-color);
-              color: var(--primary-color);
-            "
-          >
+          <button id="share-btn" class="btn outlined">
             <svg
               width="18"
               height="18"
