@@ -147,6 +147,14 @@
         box-sizing: border-box;
       }
 
+      #swap-colors-btn svg {
+        transition: transform 0.3s ease;
+      }
+
+      #swap-colors-btn:active svg {
+        transform: scale(0.8) rotate(180deg);
+      }
+
       #ui {
         position: absolute;
         top: 30px;
@@ -353,6 +361,24 @@
           <span class="setting-label">Theme Color</span>
           <input type="color" id="primary-picker" value="#27360D" />
         </div>
+        <button id="swap-colors-btn" class="btn outlined">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <polyline points="17 1 21 5 17 9"></polyline>
+            <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+            <polyline points="7 23 3 19 7 15"></polyline>
+            <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+          </svg>
+          SWAP
+        </button>
         <div class="setting-item">
           <div class="toggle-row">
             <span class="setting-label">Sound</span>
@@ -463,6 +489,7 @@
       const soundToggle = document.getElementById("sound-toggle");
       const hapticToggle = document.getElementById("haptic-toggle");
       const usernameInput = document.getElementById("username-input");
+      const swapColorsBtn = document.getElementById("swap-colors-btn");
 
       const BLOCK_HEIGHT = 40;
       const INITIAL_WIDTH = 180;
@@ -552,6 +579,10 @@
         document.documentElement.style.setProperty("--primary-color", primary);
         document.documentElement.style.setProperty("--text-color", primary);
         document.documentElement.style.setProperty("--accent-color", primary);
+
+        // Save to localStorage
+        localStorage.setItem("towerBloxx_bg", bg);
+        localStorage.setItem("towerBloxx_primary", primary);
       }
 
       settingsToggle.addEventListener("click", (e) => {
@@ -577,6 +608,20 @@
         const color = e.target.value;
         applyColors(bgPicker.value, color);
         localStorage.setItem("towerBloxx_primary", color);
+      });
+
+      swapColorsBtn.addEventListener("click", () => {
+        const currentBg = bgPicker.value;
+        const currentPrimary = primaryPicker.value;
+
+        // Swap the values
+        bgPicker.value = currentPrimary;
+        primaryPicker.value = currentBg;
+
+        // Apply the swapped colors
+        applyColors(currentPrimary, currentBg);
+        triggerHaptic(30);
+        playTone(400, 0.1);
       });
 
       soundToggle.addEventListener("change", (e) =>
