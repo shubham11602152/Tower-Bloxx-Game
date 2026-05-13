@@ -489,13 +489,6 @@
             <input type="checkbox" id="haptic-toggle" checked />
           </div>
         </div>
-        <button
-          class="btn"
-          id="close-settings"
-          style="margin-top: auto; padding: 10px"
-        >
-          CLOSE
-        </button>
       </div>
 
       <div id="ui">
@@ -626,7 +619,6 @@
 
       const settingsToggle = document.getElementById("settings-toggle");
       const settingsPanel = document.getElementById("settings-panel");
-      const closeSettings = document.getElementById("close-settings");
       const bgPicker = document.getElementById("bg-picker");
       const primaryPicker = document.getElementById("primary-picker");
       const soundToggle = document.getElementById("sound-toggle");
@@ -737,10 +729,6 @@
       settingsToggle.addEventListener("click", (e) => {
         e.stopPropagation();
         settingsPanel.classList.toggle("open");
-      });
-
-      closeSettings.addEventListener("click", () => {
-        settingsPanel.classList.remove("open");
       });
 
       usernameInput.addEventListener("change", (e) => {
