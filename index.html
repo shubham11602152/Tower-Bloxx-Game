@@ -279,6 +279,74 @@
         opacity: 0.8;
       }
 
+      /* Instructions Popup Modal */
+      #instructions-popup {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 200;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      #instructions-popup.open {
+        display: flex;
+      }
+
+      #instructions-popup-content {
+        background-image: linear-gradient(
+          to bottom right,
+          var(--bg-color),
+          var(--text-color),
+          var(--bg-color)
+        );
+        border: 4px solid var(--bg-color);
+        padding: 24px;
+        max-width: 500px;
+        text-align: center;
+        max-height: 80vh;
+        overflow-y: auto;
+      }
+
+      #instructions-popup-content h2 {
+        font-family: "silkscreen", sans-serif;
+        font-weight: 400;
+        font-size: 20px;
+        margin-bottom: 20px;
+        color: var(--bg-color);
+      }
+      #instructions-popup-content .instructions-items {
+        text-align: left;
+        margin-left: 16px;
+      }
+
+      #instructions-popup-content .instructions-text {
+        font-size: 14px;
+        line-height: 1;
+        color: var(--bg-color);
+        margin-bottom: 8px;
+      }
+
+      #instructions-popup-content .btn {
+        width: 100%;
+        max-width: 200px;
+        background: var(--bg-color);
+        color: var(--text-color);
+      }
+
+      #instructions-btn {
+        width: 100%;
+        margin-top: 20px;
+      }
+      #instructions-popup-content .btn[id="close-instructions-btn"] {
+        margin-top: 20px;
+        padding: 10px;
+        width: auto;
+        margin-left: auto;
+      }
+
       #msg-popup {
         position: absolute;
         top: 40%;
@@ -482,16 +550,50 @@
               </p>
             </div>
             <button id="start-btn" class="btn">START GAME</button>
+            <button id="instructions-btn" class="btn outlined">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
+              Instructions
+            </button>
           </div>
         </div>
 
-        <div class="instructions">
+        <!-- <div class="instructions" id="start-instructions">
           CLICK OR TAP TO DROP BLOCK<br /><br />
           LAND PERFECTLY FOR COMBOS<br />
           2 PERFECTS IN A ROW RESETS PACE<br />
           DON'T RUN OUT OF TIME!<br />
           MISS THE TOWER AND GAME OVER!
-        </div>
+        </div> -->
+
+        <div class="instructions-container"></div>
+      </div>
+    </div>
+
+    <!-- Instructions Popup Modal -->
+    <div id="instructions-popup">
+      <div id="instructions-popup-content">
+        <h2>HOW TO PLAY</h2>
+        <ul class="instructions-items">
+          <li class="instructions-text">CLICK OR TAP TO DROP BLOCK</li>
+          <li class="instructions-text">LAND PERFECTLY FOR COMBOS</li>
+          <li class="instructions-text">2 PERFECTS IN A ROW RESETS PACE</li>
+          <li class="instructions-text">DON'T RUN OUT OF TIME!</li>
+          <li class="instructions-text">MISS THE TOWER AND GAME OVER!</li>
+        </ul>
+        <button id="close-instructions-btn" class="btn">CLOSE</button>
       </div>
     </div>
 
@@ -531,6 +633,12 @@
       const hapticToggle = document.getElementById("haptic-toggle");
       const usernameInput = document.getElementById("username-input");
       const swapColorsBtn = document.getElementById("swap-colors-btn");
+
+      const instructionsPopup = document.getElementById("instructions-popup");
+      const instructionsBtn = document.getElementById("instructions-btn");
+      const closeInstructionsBtn = document.getElementById(
+        "close-instructions-btn",
+      );
 
       const BLOCK_HEIGHT = 40;
       const INITIAL_WIDTH = 180;
@@ -1071,6 +1179,22 @@
       shareBtn.addEventListener("click", (e) => {
         e.stopPropagation();
         generatePostcard(false);
+      });
+
+      instructionsBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        instructionsPopup.classList.add("open");
+      });
+
+      closeInstructionsBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        instructionsPopup.classList.remove("open");
+      });
+
+      instructionsPopup.addEventListener("click", (e) => {
+        if (e.target === instructionsPopup) {
+          instructionsPopup.classList.remove("open");
+        }
       });
 
       window.addEventListener("mousedown", (e) => {
